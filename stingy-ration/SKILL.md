@@ -121,8 +121,19 @@ Copied to clipboard:
 ```
 
 ```bash
-cat /tmp/stingy-export-*.md | pbcopy
-echo "Export copied to clipboard — paste into any AI chat"
+EXPORT_FILE=$(ls -t /tmp/stingy-export-*.md 2>/dev/null | head -1)
+if [ -n "$EXPORT_FILE" ]; then
+  if command -v pbcopy >/dev/null 2>&1; then
+    cat "$EXPORT_FILE" | pbcopy
+  elif command -v xclip >/dev/null 2>&1; then
+    cat "$EXPORT_FILE" | xclip -selection clipboard
+  elif command -v xsel >/dev/null 2>&1; then
+    cat "$EXPORT_FILE" | xsel --clipboard --input
+  else
+    echo "Clipboard tool not found. Copy manually from: $EXPORT_FILE"
+  fi
+  echo "Export copied to clipboard — paste into any AI chat"
+fi
 ```
 
 ## Step 5: Ultra-Efficient Mode Rules
@@ -152,9 +163,9 @@ git stash -m "stingy-ration: WIP $(date +%Y-%m-%d)"
 echo "Work stashed. Tomorrow: git stash pop"
 ```
 
-Or commit a WIP:
+Or commit a WIP (stage only tracked files — never use `git add -A`):
 ```bash
-git add -A && git commit -m "WIP: [description of what's in progress]"
+git add -u && git commit -m "WIP: [description of what's in progress]"
 ```
 
 And write a brief note for tomorrow's session:

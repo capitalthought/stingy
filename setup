@@ -4,25 +4,74 @@ set -e
 
 STINGY_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILLS_DIR="$HOME/.claude/skills"
+SKILLS=(stingy-slim stingy-audit stingy-route stingy-burn stingy-compare stingy-budget stingy-ration stingy-guard)
 
+# ─── Uninstall ───────────────────────────────────────────────
+if [ "${1:-}" = "--uninstall" ]; then
+  echo "stingy — uninstalling"
+  echo ""
+  for skill in "${SKILLS[@]}"; do
+    target="$SKILLS_DIR/$skill"
+    if [ -d "$target" ] || [ -L "$target" ]; then
+      rm -rf "$target"
+      echo "  ❌ Removed $target"
+    fi
+  done
+  echo ""
+  echo "Skills removed from $SKILLS_DIR"
+  echo ""
+  if [ -d "$HOME/.stingy" ]; then
+    read -r -p "Also remove data directory ~/.stingy/? [y/N] " response
+    if [[ "$response" =~ ^[Yy]$ ]]; then
+      rm -rf "$HOME/.stingy"
+      echo "  ❌ Removed ~/.stingy/"
+    else
+      echo "  Kept ~/.stingy/ (budgets and usage logs preserved)"
+    fi
+  fi
+  echo ""
+  echo "Uninstall complete. Restart Claude Code to take effect."
+  exit 0
+fi
+
+# ─── Install ─────────────────────────────────────────────────
 echo "stingy — token efficiency toolkit for Claude Code"
 echo "================================================="
 echo ""
+echo "This will:"
+echo "  • Create symlinks in $SKILLS_DIR/ for ${#SKILLS[@]} skills"
+echo "  • Create a data directory at ~/.stingy/ (budgets, usage logs)"
+echo "  • No other files will be modified"
+echo ""
+
+# Confirmation prompt (skip with --yes or in non-interactive mode)
+if [ "${1:-}" != "--yes" ] && [ -t 0 ]; then
+  read -r -p "Continue? [Y/n] " response
+  if [[ "$response" =~ ^[Nn]$ ]]; then
+    echo "Aborted."
+    exit 0
+  fi
+fi
 
 # Ensure skills directory exists
 mkdir -p "$SKILLS_DIR"
 
-# Link or copy each skill
-SKILLS=(stingy-slim stingy-audit stingy-route stingy-burn stingy-compare stingy-budget stingy-ration stingy-guard)
-
+echo ""
 for skill in "${SKILLS[@]}"; do
   target="$SKILLS_DIR/$skill"
 
-  # Remove old symlink or directory
+  # Safety: only remove if it's a symlink or a stingy-managed directory
   if [ -L "$target" ]; then
     rm "$target"
   elif [ -d "$target" ]; then
-    rm -rf "$target"
+    # Check if this looks like a stingy skill (has symlink to our SKILL.md)
+    if [ -L "$target/SKILL.md" ]; then
+      rm -rf "$target"
+    else
+      echo "  ⚠️  Skipping $skill — $target exists and wasn't created by stingy"
+      echo "     Remove it manually if you want stingy to manage this skill."
+      continue
+    fi
   fi
 
   # Create directory with symlinked SKILL.md
@@ -41,17 +90,18 @@ done
 mkdir -p "$HOME/.stingy"
 
 echo ""
-echo "Installed ${#SKILLS[@]} skills:"
+echo "Installed ${#SKILLS[@]} skills. Open Claude Code and type a command to start:"
 echo ""
-echo "  /stingy-slim      Optimize CLAUDE.md + MCP configs for token efficiency"
-echo "  /stingy-audit     Analyze current session for token waste"
-echo "  /stingy-route     Recommend cheapest model/platform for a task"
-echo "  /stingy-burn      Show session token burn rate and cost breakdown"
-echo "  /stingy-compare   Cross-platform cost comparison"
-echo "  /stingy-budget    Set and track token spending budgets"
-echo "  /stingy-ration    Emergency mode: low on tokens, export or triage"
-echo "  /stingy-guard     Toggle pre-tool-use efficiency warnings"
+echo "  /stingy-slim      Find what's making your AI sessions expensive and fix it"
+echo "  /stingy-audit     Check if you're wasting tokens in this session"
+echo "  /stingy-route     Get the cheapest AI for any task"
+echo "  /stingy-burn      See your session cost breakdown"
+echo "  /stingy-compare   Compare prices across Claude, ChatGPT, Gemini, Grok"
+echo "  /stingy-budget    Set a spending limit and track it"
+echo "  /stingy-ration    Running low? Export your work to a cheaper AI"
+echo "  /stingy-guard     Auto-warn before wasteful tool calls"
 echo ""
-echo "Quick start: type /stingy-slim in any Claude Code session"
+echo "👉 Start here: type /stingy-slim in Claude Code to see your token footprint"
 echo ""
 echo "Data stored in: ~/.stingy/"
+echo "To uninstall:   ./setup --uninstall"

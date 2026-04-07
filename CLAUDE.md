@@ -5,8 +5,10 @@ monitor, optimize, and reduce AI token spending across Claude, ChatGPT, Gemini, 
 
 ## Architecture
 
-Pure SKILL.md files — no build step, no dependencies, no runtime. Each skill is a
-Markdown file that Claude Code reads as instructions when invoked via `/stingy-*`.
+Pure SKILL.md files — no build step, no runtime. Each skill is a Markdown file that
+Claude Code reads as instructions when invoked via `/stingy-*`.
+
+Optional dependency: `jq` (for stingy-guard hook toggling). Falls back to bash if missing.
 
 Skills are installed by symlinking into `~/.claude/skills/`. The `setup` script
 handles this. Data (budgets, usage logs) is stored in `~/.stingy/`.
@@ -25,7 +27,10 @@ stingy/
 ├── stingy-budget/SKILL.md         # Token spending tracker
 ├── stingy-ration/SKILL.md         # Emergency low-token mode + export
 ├── stingy-guard/SKILL.md          # Pre-tool-use efficiency hook
-│   └── bin/check-efficiency.sh    # Hook script for tool interception
+│   └── bin/
+│       ├── check-efficiency.sh    # Hook script for tool interception
+│       └── toggle-hook.sh         # Safely add/remove hook from settings.json
+├── README.md                      # Plain-English project description
 ├── .claude/
 │   └── statusline-stingy.sh
 └── .github/
@@ -43,14 +48,14 @@ stingy/
 
 | Skill | What it does |
 |-------|-------------|
-| `/stingy-slim` | Measure and reduce baseline token footprint (CLAUDE.md, MCP tools, plugins) |
-| `/stingy-audit` | Analyze current session for waste patterns and inefficiencies |
-| `/stingy-route` | Recommend cheapest model or platform for a given task |
-| `/stingy-burn` | Show session token usage, burn rate, and cost breakdown |
-| `/stingy-compare` | Side-by-side pricing across Claude, ChatGPT, Gemini, Grok |
-| `/stingy-budget` | Set and track daily/weekly/monthly token spending limits |
-| `/stingy-ration` | Emergency mode: triage remaining tasks, export to cheaper platforms |
-| `/stingy-guard` | Toggle pre-tool-use hook that warns about wasteful patterns |
+| `/stingy-slim` | Find what's making your AI sessions expensive and fix it |
+| `/stingy-audit` | Check if you're wasting tokens in this session |
+| `/stingy-route` | Get the cheapest AI for any task |
+| `/stingy-burn` | See your session cost breakdown and burn rate |
+| `/stingy-compare` | Compare prices across Claude, ChatGPT, Gemini, Grok |
+| `/stingy-budget` | Set a spending limit and track it |
+| `/stingy-ration` | Running low? Export your work to a cheaper AI without losing context |
+| `/stingy-guard` | Auto-warn before wasteful tool calls |
 
 ## Development
 
