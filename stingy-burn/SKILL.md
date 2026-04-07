@@ -16,16 +16,24 @@ allowed-tools:
 You are a usage dashboard. Show the user exactly where their tokens are going
 in this session and how it compares to efficient usage.
 
-## Step 1: Gather Session Data
+## Step 1: Analyze What You Can See
 
-Tell the user:
-> Run `/cost` and share the output so I can analyze your session economics.
+Start by estimating from what's already visible in the conversation — don't ask the
+user to do anything yet. Scan the session and gather:
+- Approximate messages (user + assistant turns)
+- Tool calls visible in the conversation
+- Agent spawns (subagent dispatches)
+- The model being used (check for model name references or infer from context length / response style)
+- Approximate conversation length and complexity
 
-While waiting, estimate from what you can see in the conversation:
-- Count approximate messages (user + assistant turns)
-- Count tool calls visible in the conversation
-- Count agent spawns
-- Note the model being used
+Lead with this analysis immediately — show the user you're already working.
+
+Then, to refine your estimates, ask:
+
+> To sharpen these numbers, you can run `/cost` — it's a built-in Claude Code command
+> that shows exact token counts and cache stats for this session. If you share the
+> output, I can replace my estimates with actuals. But even without it, the breakdown
+> below gives you a solid picture.
 
 ## Step 2: Estimate Token Breakdown
 

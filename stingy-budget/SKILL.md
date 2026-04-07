@@ -47,18 +47,32 @@ If no budget exists (or user wants to change it), ask:
 >
 > What's your target? You can specify in dollars or tokens.
 
-Create the budget file:
+**Before creating budget.json, check if one already exists.** If it does, show the user
+the current config and ask whether they want to update it or keep it. Don't silently overwrite.
 
 ```bash
 mkdir -p ~/.stingy
-cat > ~/.stingy/budget.json << 'EOF'
+if [ -f ~/.stingy/budget.json ]; then
+  echo "EXISTING_BUDGET_FOUND"
+  cat ~/.stingy/budget.json
+  # Ask the user: "You already have a budget set. Want to update it or keep the current one?"
+  # Only proceed with the write below if they confirm they want to update.
+else
+  echo "NO_EXISTING_BUDGET"
+fi
+```
+
+If the user confirms (or no budget exists), create the budget file:
+
+```bash
+cat > ~/.stingy/budget.json << EOF
 {
   "period": "daily",
   "limit_dollars": 10.00,
   "limit_tokens": 1000000,
   "model_default": "sonnet",
   "alert_at": 0.75,
-  "created": "YYYY-MM-DD",
+  "created": "$(date +%Y-%m-%d)",
   "notes": "Set via /budget"
 }
 EOF
@@ -67,13 +81,23 @@ echo "Budget saved to ~/.stingy/budget.json"
 
 ## Step 3: Log This Session
 
-Every time /budget runs, log an entry:
+Every time /budget runs, log an entry.
+
+**IMPORTANT:** The values `CURRENT_MODEL`, `ESTIMATED_TOKEN_COUNT`, and `SESSION_DESCRIPTION`
+below are **placeholders you must replace** with real data from the current session:
+- `CURRENT_MODEL` — the model in use (e.g., "opus", "sonnet", "haiku")
+- `ESTIMATED_TOKEN_COUNT` — actual token count if known; otherwise estimate from conversation length
+- `SESSION_DESCRIPTION` — brief description of what this session was about
+
+If you don't have actual token counts, set `"estimated": true` in the JSON and estimate
+based on conversation length. If you have no useful data at all, **skip logging entirely**
+rather than writing placeholder literals.
 
 ```bash
 mkdir -p ~/.stingy
-# Append a usage entry
+# Append a usage entry — replace ALL placeholders with real values before running
 cat >> ~/.stingy/usage.jsonl << EOF
-{"date":"$(date +%Y-%m-%d)","time":"$(date +%H:%M)","model":"CURRENT_MODEL","estimated_tokens":ESTIMATED,"notes":"SESSION_DESCRIPTION"}
+{"date":"$(date +%Y-%m-%d)","time":"$(date +%H:%M)","model":"CURRENT_MODEL","estimated_tokens":ESTIMATED_TOKEN_COUNT,"estimated":true,"notes":"SESSION_DESCRIPTION"}
 EOF
 ```
 

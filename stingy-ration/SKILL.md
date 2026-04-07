@@ -70,7 +70,25 @@ SKIP (not worth the tokens right now):
 ## Step 4: Export Conversation for Continuation
 
 When tasks should move to another platform, generate a **portable context bundle**
-that the user can paste into ChatGPT, Gemini, or Grok.
+that the user can paste into another AI chat.
+
+### Check Available Platforms
+
+Before showing platform-specific instructions, determine what the user has access to:
+
+1. Check if `~/.stingy/config.json` exists and has a `platforms` key — if so, use that list.
+2. If no config exists, ask the user:
+
+> Which AI platforms do you have access to? (ChatGPT, Gemini, Grok, or just Claude?)
+
+If the user only has Claude, skip the export and focus on model downgrade (Step 2) and
+session efficiency (Step 5) instead. Tell them:
+
+> No export needed — let's maximize what we can do here. Switch to Haiku for
+> simple tasks and save the complex ones for tomorrow's fresh budget.
+
+If the user has at least one other platform, proceed with the export below — but only
+show instructions for the platforms they confirmed.
 
 ### Export Format
 
@@ -99,24 +117,19 @@ Write a file to `/tmp/stingy-export-{timestamp}.md`:
  Use the smallest excerpt that gives enough context.]
 ```
 
-Then tell the user:
+Then tell the user (showing ONLY the platforms they confirmed access to):
 
 ```
 Export saved to: /tmp/stingy-export-XXXXX.md
+```
 
-To continue on ChatGPT:
-  1. Open chat.openai.com
-  2. Paste the contents of the export file
-  3. Say: "Continue from where I left off"
+Include only the relevant instructions from:
 
-To continue on Gemini:
-  1. Open aistudio.google.com
-  2. Paste the export (Gemini handles huge context well)
+- **ChatGPT:** Open chat.openai.com → Paste the export → Say "Continue from where I left off"
+- **Gemini:** Open aistudio.google.com → Paste the export (Gemini handles huge context well)
+- **Grok:** Open grok.x.ai → Paste the export
 
-To continue on Grok:
-  1. Open grok.x.ai
-  2. Paste the export
-
+```
 Copied to clipboard:
 ```
 
@@ -153,22 +166,40 @@ Tell the user:
 > Estimated remaining capacity: ~[X] tool calls at current model.
 > Priority tasks: [list the MUST DO items]
 
-## Step 6: Git Stash for Tomorrow
+## Step 6: Save State for Tomorrow
 
-If the user can't finish everything today, help them save state:
+If the user can't finish everything today, help them save state.
 
+### Ask before touching git
+
+**Do not run any git commands without explicit permission.** Use AskUserQuestion first:
+
+> Would you like me to save your work-in-progress? I can either:
+> 1. **Git stash** — temporarily shelves your changes (undo with `git stash pop`)
+> 2. **WIP commit** — creates a commit you can amend later
+> 3. **Skip** — leave everything as-is, just write pickup notes
+>
+> This is optional. Your files on disk won't be affected if you skip.
+
+Only proceed with the option the user picks:
+
+**If stash:**
 ```bash
 # Save uncommitted work
 git stash -m "stingy-ration: WIP $(date +%Y-%m-%d)"
 echo "Work stashed. Tomorrow: git stash pop"
 ```
 
-Or commit a WIP (stage only tracked files — never use `git add -A`):
+**If WIP commit** (stage only tracked files — never use `git add -A`):
 ```bash
 git add -u && git commit -m "WIP: [description of what's in progress]"
 ```
 
-And write a brief note for tomorrow's session:
+**If skip:** Go straight to pickup notes below.
+
+### Pickup notes
+
+Write a brief note for tomorrow's session regardless of the git choice:
 
 ```bash
 cat > /tmp/stingy-pickup-notes.md << 'EOF'

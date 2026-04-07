@@ -116,7 +116,12 @@ Capability tradeoff: [what you can't do]
 Verdict: [Switch / Stay / Split workload]
 ```
 
-## Pricing Data (April 2026)
+## Pricing Reference (as of April 2026 — verify before making decisions)
+
+> **Staleness warning:** The pricing data below was captured in April 2026.
+> AI pricing changes frequently — models get cheaper, new tiers appear, subscriptions shift.
+> Always caveat your output with: *"Prices may have changed since April 2026.
+> For critical decisions, verify current rates at each provider's pricing page."*
 
 ### API Pricing (per 1M tokens)
 
@@ -159,3 +164,5 @@ A "typical task" = ~30K input tokens + ~2K output tokens:
 - Always include the "don't use AI" option when applicable.
 - Show relative costs (Nx baseline) — humans process ratios better than raw dollars.
 - If the user is on a subscription, frame everything in terms of allocation efficiency.
+- **Staleness check:** If the current date is more than 3 months after April 2026 (i.e., after July 2026), use WebSearch to check current pricing before presenting comparisons. Providers to check: anthropic.com/pricing, openai.com/pricing, ai.google.dev/pricing, x.ai. Even within the 3-month window, if the user specifically asks about "current" or "latest" pricing, verify with WebSearch.
+- **Always include a pricing caveat** in your output: "Prices reflect April 2026 data. For critical spending decisions, verify current rates at each provider's pricing page."

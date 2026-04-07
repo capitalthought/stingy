@@ -1,4 +1,5 @@
 agents
+# /bin is the top-level iCloud symlink; stingy-*/bin/ directories are tracked
 /bin
 models.json
 .claude/settings.local.json

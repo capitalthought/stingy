@@ -116,7 +116,14 @@ If the user is currently in Claude Code, give actionable switching advice:
 - **To use Gemini instead:** "Open AI Studio and paste: [optimized prompt]"
 - **To skip AI entirely:** "Just run: [command]"
 
-## Pricing Reference (April 2026)
+## Pricing Reference (as of April 2026 — verify before making decisions)
+
+> **Staleness warning:** If the user asks about current pricing and this data is more than
+> 3 months old, use WebSearch to check current rates before presenting. AI model pricing
+> changes frequently — providers cut prices, launch new tiers, and deprecate old models.
+
+> **Note:** These prices are also in `/stingy-compare`, which has a more detailed
+> side-by-side breakdown including per-task cost estimates and subscription math.
 
 Keep this current. These are approximate API prices per 1M tokens:
 

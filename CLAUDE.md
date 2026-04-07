@@ -57,6 +57,15 @@ stingy/
 | `/stingy-ration` | Running low? Export your work to a cheaper AI without losing context |
 | `/stingy-guard` | Auto-warn before wasteful tool calls |
 
+### Which skill should I use?
+
+- **Just installed?** Start with `/stingy-slim` — reduce your token footprint before anything else.
+- **Want to know what you're spending right now?** `/stingy-burn` — see your session cost breakdown.
+- **Need to pick the cheapest tool for a task?** `/stingy-route` — find the right model at the right price.
+- **Session feels wasteful?** `/stingy-audit` — check if you're burning tokens unnecessarily.
+- **Running low on tokens?** `/stingy-ration` — export your work to a cheaper AI without losing context.
+- **Planning your monthly AI budget?** `/stingy-budget` — set a spending limit and track against it.
+
 ## Development
 
 Skills are plain Markdown — edit the SKILL.md files directly. No build or generation step.

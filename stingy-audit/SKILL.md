@@ -14,7 +14,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-# /audit — Session Efficiency Audit
+# /stingy-audit — Session Efficiency Audit
 
 You are a token efficiency analyst. Review this conversation session and identify
 where tokens were wasted and how the user can be more efficient going forward.

@@ -13,10 +13,29 @@ set -uo pipefail
 TOOL="${TOOL_NAME:-}"
 INPUT="${TOOL_INPUT:-}"
 
+# Session-scoped spawn tracking directory (keyed by parent PID so each
+# Claude Code session gets its own counters).
+SPAWN_DIR="/tmp/stingy-guard-${PPID:-0}"
+mkdir -p "$SPAWN_DIR" 2>/dev/null || true
+
 # Helper: warn but allow (always exit 0)
 warn() {
   echo "⚠️  stingy-guard: $1" >&2
   exit 0
+}
+
+# Helper: increment spawn count for a tool and return the NEW count.
+# First call returns 1, second returns 2, etc.
+bump_spawn_count() {
+  local tool_key="$1"
+  local count_file="$SPAWN_DIR/$tool_key"
+  local prev=0
+  if [ -f "$count_file" ]; then
+    prev=$(cat "$count_file" 2>/dev/null || echo 0)
+  fi
+  local next=$(( prev + 1 ))
+  echo "$next" > "$count_file" 2>/dev/null || true
+  echo "$next"
 }
 
 # Extract a JSON string field using jq if available, else bash heuristics
@@ -63,11 +82,17 @@ case "$TOOL" in
     ;;
 
   Agent)
-    warn "Agent spawn detected. Each agent duplicates ~15-30K tokens of system context. Is a direct Grep/Read enough instead?"
+    count=$(bump_spawn_count "Agent")
+    if [ "$count" -ge 2 ] 2>/dev/null; then
+      warn "Agent spawn #$count this session. Each agent duplicates ~15-30K tokens of system context. Is a direct Grep/Read enough instead?"
+    fi
     ;;
 
   WebSearch)
-    warn "Web search uses significant tokens for results. Make sure you can't answer this from local files or existing knowledge."
+    count=$(bump_spawn_count "WebSearch")
+    if [ "$count" -ge 2 ] 2>/dev/null; then
+      warn "Web search #$count this session. Significant token cost per search. Make sure you can't answer this from local files or existing knowledge."
+    fi
     ;;
 esac
 

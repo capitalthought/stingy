@@ -26,6 +26,17 @@ files, MCP tool definitions, and hook configs. This "baseline tax" is paid on EV
 SINGLE MESSAGE in EVERY conversation. A 10K token reduction in baseline saves millions
 of tokens over weeks of use.
 
+## Output Format — Lead with Summary
+
+Before presenting any detailed tables or section-by-section analysis, **always lead with a
+brief 2-3 sentence summary** at the top of your report. Example:
+
+> "You're spending ~42,000 tokens per message on baseline overhead. Your biggest costs are
+> the global CLAUDE.md (18K tokens) and 3 MCP servers (12K tokens). Here are 3 ways to
+> cut ~8,000 tokens with zero risk."
+
+This gives the user immediate value before they dive into the full breakdown.
+
 ## Safety Rules — Read These First
 
 **NEVER do any of these without explicit user approval for each one:**
@@ -59,11 +70,12 @@ Run all of these to gather data:
 
 ### 1a. Global CLAUDE.md
 ```bash
+# Note: chars/4 is a rough heuristic (~30% margin). Actual token counts vary by content.
 if [ -f ~/.claude/CLAUDE.md ]; then
   chars=$(wc -c < ~/.claude/CLAUDE.md)
   lines=$(wc -l < ~/.claude/CLAUDE.md)
   tokens=$((chars / 4))
-  echo "GLOBAL_CLAUDE_MD: $lines lines, $chars chars, ~$tokens tokens"
+  echo "GLOBAL_CLAUDE_MD: $lines lines, $chars chars, ~$tokens tokens (rough estimate)"
 else
   echo "GLOBAL_CLAUDE_MD: not found"
 fi
@@ -71,11 +83,12 @@ fi
 
 ### 1b. Project CLAUDE.md
 ```bash
+# Note: chars/4 is a rough heuristic (~30% margin). Actual token counts vary by content.
 if [ -f CLAUDE.md ]; then
   chars=$(wc -c < CLAUDE.md)
   lines=$(wc -l < CLAUDE.md)
   tokens=$((chars / 4))
-  echo "PROJECT_CLAUDE_MD: $lines lines, $chars chars, ~$tokens tokens"
+  echo "PROJECT_CLAUDE_MD: $lines lines, $chars chars, ~$tokens tokens (rough estimate)"
 else
   echo "PROJECT_CLAUDE_MD: not found"
 fi
@@ -143,7 +156,13 @@ import json
 with open('$HOME/.claude/settings.json') as f:
     data = json.load(f)
 plugins = data.get('enabledPlugins', {})
-active = [k for k, v in plugins.items() if v]
+# Handle both dict schema ({name: bool}) and list schema ([name, ...])
+if isinstance(plugins, dict):
+    active = [k for k, v in plugins.items() if v]
+elif isinstance(plugins, list):
+    active = list(plugins)
+else:
+    active = []
 print(f'PLUGINS: {len(active)} active')
 for p in active:
     print(f'  {p}')
@@ -186,6 +205,10 @@ Read the global CLAUDE.md and break it down by `##` section. For each section, r
 how Claude works. Cutting them changes behavior. Flag them as "fixed cost" in the report.
 
 ## Step 4: Build the Token Budget Report
+
+**⚠️ All token estimates are rough approximations (~30% margin).** The chars/4 heuristic
+varies by content type — code-heavy text tokenizes differently than prose. Use these numbers
+for relative comparisons (what's biggest) rather than exact accounting.
 
 Present a table:
 
