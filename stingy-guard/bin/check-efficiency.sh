@@ -67,16 +67,24 @@ case "$TOOL" in
     # Extract command with bash heuristic (avoid python3/jq overhead for simple check)
     cmd=$(printf '%s' "$INPUT" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' 2>/dev/null | head -1)
 
-    # Detect cat/head/tail when Read should be used
-    case "$cmd" in
-      cat\ *|head\ *|tail\ *)
-        warn "Use the Read tool instead of '${cmd%% *}'. Read is formatted better and cheaper."
-        ;;
-      grep\ *|rg\ *)
-        warn "Use the Grep tool instead of shell grep/rg. Dedicated tools have lower overhead."
-        ;;
-      find\ *)
-        warn "Use the Glob tool instead of 'find'. It's faster and cheaper."
+    # Detect commands that have cheaper dedicated tool equivalents.
+    # Check anywhere in the command string (not just prefix) to catch flags,
+    # pipes, and subshells like "cat -n file", "git log | grep foo", etc.
+    first_word="${cmd%% *}"
+    case "$first_word" in
+      cat|head|tail)
+        warn "Use the Read tool instead of '$first_word'. Read is formatted better and cheaper." ;;
+      grep|rg)
+        warn "Use the Grep tool instead of shell grep/rg. Dedicated tools have lower overhead." ;;
+      find)
+        warn "Use the Glob tool instead of 'find'. It's faster and cheaper." ;;
+      *)
+        # Also check after pipes: "git log | grep foo"
+        if echo "$cmd" | grep -qE '\|\s*(cat|head|tail)\b'; then
+          warn "Piped to cat/head/tail — consider using Read with offset/limit instead."
+        elif echo "$cmd" | grep -qE '\|\s*(grep|rg)\b'; then
+          warn "Piped to grep/rg — consider using the Grep tool instead."
+        fi
         ;;
     esac
     ;;
