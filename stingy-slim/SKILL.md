@@ -16,19 +16,46 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-# /slim — Token Footprint Optimizer
+# /stingy-slim — Token Footprint Optimizer
 
-You are a ruthless token efficiency auditor. Your job is to measure the baseline
-token cost of the user's Claude Code configuration and find concrete ways to reduce it.
+You are a token efficiency auditor. Your job is to measure the baseline token cost
+of the user's Claude Code configuration and find safe ways to reduce it.
 
 **Why this matters:** Every Claude Code message includes the system prompt, CLAUDE.md
 files, MCP tool definitions, and hook configs. This "baseline tax" is paid on EVERY
 SINGLE MESSAGE in EVERY conversation. A 10K token reduction in baseline saves millions
 of tokens over weeks of use.
 
+## Safety Rules — Read These First
+
+**NEVER do any of these without explicit user approval for each one:**
+
+1. **Never delete or modify CLAUDE.md behavioral instructions.** Sections that tell
+   Claude HOW to behave (voice, workflow, conventions, formatting rules) are not
+   "bloat" — they're the user's configuration. Removing them changes Claude's behavior.
+
+2. **Never remove an MCP server from global config without FIRST adding it to every
+   project that uses it.** The correct order is: add to project `.claude.json` → verify
+   it works → THEN remove from global. Never just remove.
+
+3. **Never edit settings.json without validating the result is valid JSON.** After any
+   edit, run: `python3 -c "import json; json.load(open('$HOME/.claude/settings.json'))"`
+
+4. **Never apply changes in bulk.** Present each change individually with its risk level.
+   Let the user approve or reject each one.
+
+5. **Always back up before any modification:**
+   ```bash
+   cp ~/.claude/settings.json ~/.claude/settings.json.bak.$(date +%s)
+   cp ~/.claude/CLAUDE.md ~/.claude/CLAUDE.md.bak.$(date +%s) 2>/dev/null || true
+   ```
+
+6. **Default mode is REPORT ONLY.** Measure and recommend. Do not offer to apply
+   changes until the user has seen the full report and asks you to.
+
 ## Step 1: Measure Everything
 
-Run all of these in parallel to gather data:
+Run all of these to gather data:
 
 ### 1a. Global CLAUDE.md
 ```bash
@@ -57,7 +84,6 @@ fi
 ### 1c. MCP Servers from settings.json
 ```bash
 if [ -f ~/.claude/settings.json ]; then
-  # Extract top-level mcpServers keys
   python3 -c "
 import json, sys
 with open('$HOME/.claude/settings.json') as f:
@@ -66,7 +92,6 @@ servers = data.get('mcpServers', {})
 print(f'SETTINGS_MCP_COUNT: {len(servers)}')
 for name, config in servers.items():
     cmd = config.get('command', 'unknown')
-    args = ' '.join(config.get('args', []))
     print(f'  MCP: {name} ({cmd})')
 " 2>/dev/null || echo "SETTINGS_MCP: parse error"
 fi
@@ -110,13 +135,7 @@ for event, items in hooks.items():
 fi
 ```
 
-### 1f. Count deferred tools currently loaded
-```bash
-echo "Count the deferred tools listed in system-reminder messages in this conversation."
-echo "Each deferred tool name contributes ~10-20 tokens to context."
-```
-
-### 1g. Plugins
+### 1f. Plugins
 ```bash
 if [ -f ~/.claude/settings.json ]; then
   python3 -c "
@@ -135,101 +154,160 @@ fi
 ## Step 2: Analyze Deferred Tools
 
 Count the deferred tools visible in the current conversation context. These are MCP
-tools that have been registered. Each tool definition is roughly 50-200 tokens depending
-on parameter complexity. Even "deferred" tools cost tokens for their name listing.
+tools that have been registered. Each tool definition costs tokens even when "deferred" —
+the tool name list is still in context.
 
 Scan the system-reminder messages you can see for lines matching `mcp__*` patterns.
 Group by MCP server prefix and count tools per server.
 
-## Step 3: Build the Token Budget Report
-
-Present a table like this:
-
-```
-┌─────────────────────────────────────┬──────────┬───────────┐
-│ Component                           │ Est. Tokens │ % of Base │
-├─────────────────────────────────────┼──────────┼───────────┤
-│ System prompt (Claude Code built-in)│ ~3,000   │ fixed     │
-│ Global CLAUDE.md                    │ X,XXX    │ XX%       │
-│ Project CLAUDE.md                   │ X,XXX    │ XX%       │
-│ MCP: google-workspace (XX tools)    │ X,XXX    │ XX%       │
-│ MCP: supabase (XX tools)            │ X,XXX    │ XX%       │
-│ MCP: airtable (XX tools)            │ X,XXX    │ XX%       │
-│ MCP: asana-mikey (XX tools)         │ X,XXX    │ XX%       │
-│ ...                                 │          │           │
-│ Plugins: vercel-plugin              │ X,XXX    │ XX%       │
-│ Hooks                               │ XXX      │ X%        │
-├─────────────────────────────────────┼──────────┼───────────┤
-│ TOTAL BASELINE (per message)        │ XX,XXX   │ 100%      │
-└─────────────────────────────────────┴──────────┴───────────┘
-```
-
 **Token estimation for MCP tools:** Each tool definition is roughly:
-- Tool name: ~5 tokens
-- Description: ~30-80 tokens
-- Parameters schema: ~50-200 tokens
-- **Average: ~100 tokens per tool**
+- Tool name in deferred list: ~10-20 tokens per tool
+- Full schema when fetched via ToolSearch: ~100-200 tokens per tool
+- **Average baseline cost: ~15 tokens per deferred tool name**
 
-Multiply tool count by 100 for a rough estimate.
+## Step 3: Per-Section CLAUDE.md Analysis
 
-## Step 4: Identify Cuts
+Read the global CLAUDE.md and break it down by `##` section. For each section, report:
+- Section name
+- Token count (chars / 4)
+- Category (see below)
 
-For each component, recommend specific cuts:
+**Section categories:**
 
-### CLAUDE.md Optimization
-Read both CLAUDE.md files and identify:
-- **Sections that duplicate info derivable from code** (file structure maps, architecture docs) — CUT
-- **Sections rarely relevant** to most conversations — MOVE to project memory or a separate file
-- **Verbose instructions** that could be compressed — REWRITE
-- **Stale information** (old project references, deprecated patterns) — DELETE
-- **Per-section token count** — measure each `##` section independently
+| Category | Description | Can it be reduced? |
+|----------|-------------|-------------------|
+| **Behavioral** | How Claude should act (voice, tone, workflow, conventions) | NO — this is configuration, not bloat |
+| **Reference** | Lookup tables, account lists, credential locations | MAYBE — could be moved to memory files that are loaded on demand |
+| **Structural** | File paths, architecture docs, project structure | MAYBE — some of this is derivable from the codebase |
+| **Stale** | Outdated information, deprecated patterns, old project refs | YES — safe to remove |
+| **Redundant** | Duplicated across global and project CLAUDE.md | YES — keep in one place |
 
-For each section, give: section name, token count, recommendation (keep/cut/compress), estimated savings.
+**Important:** "Behavioral" sections are NEVER bloat, even if they're large. They define
+how Claude works. Cutting them changes behavior. Flag them as "fixed cost" in the report.
 
-### MCP Optimization
-For each MCP server:
-- How many tools does it expose?
-- How often do you actually use it? (Ask the user if unsure)
-- Can it be moved to a project-level config instead of global?
-- Is there a lighter alternative?
+## Step 4: Build the Token Budget Report
 
-**Key principle:** MCP servers used in only 1-2 projects should be in project-level
-`.claude.json`, not global `settings.json`. Global = loaded everywhere. Project = loaded only there.
-
-Recommend:
-- **Move to project-level:** servers only used in specific repos
-- **Disable entirely:** servers rarely used (user can enable on demand)
-- **Replace with lighter alternative:** if an MCP server exposes 50 tools but you use 3
-
-### Plugin Optimization
-- Does the Vercel plugin load on every repo, even non-Vercel ones?
-- Can plugins be scoped to specific projects?
-
-## Step 5: Savings Summary
+Present a table:
 
 ```
-Potential savings: ~X,XXX tokens per message
-Over 100 messages/day: ~X,XXX,XXX tokens/day saved
-Estimated monthly savings: $XX-$XXX (API) or XX% fewer rate limit hits (subscription)
+TOKEN FOOTPRINT REPORT
+═══════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────┬───────────┬───────────┐
+│ Component                           │ Est. Tokens│ % of Base │
+├─────────────────────────────────────┼───────────┼───────────┤
+│ System prompt (Claude Code built-in)│ ~3,000    │ fixed     │
+│ Global CLAUDE.md                    │ X,XXX     │ XX%       │
+│   Behavioral sections (fixed)       │   X,XXX   │           │
+│   Reference sections (reducible)    │   X,XXX   │           │
+│   Stale/redundant (removable)       │   X,XXX   │           │
+│ Project CLAUDE.md                   │ X,XXX     │ XX%       │
+│ MCP: [name] (XX tools)             │ X,XXX     │ XX%       │
+│ MCP: [name] (XX tools)             │ X,XXX     │ XX%       │
+│ ...                                 │           │           │
+│ Plugins                             │ X,XXX     │ XX%       │
+│ Hooks                               │ XXX       │ X%        │
+├─────────────────────────────────────┼───────────┼───────────┤
+│ TOTAL BASELINE (per message)        │ XX,XXX    │ 100%      │
+│ REDUCIBLE PORTION                   │ X,XXX     │ XX%       │
+│ FIXED PORTION                       │ XX,XXX    │ XX%       │
+└─────────────────────────────────────┴───────────┴───────────┘
 ```
 
-## Step 6: Offer to Apply
+## Step 5: Recommendations (Risk-Classified)
 
-Use AskUserQuestion to offer applying the changes:
+Classify every recommendation by risk:
 
-> Here are the changes I recommend. Which should I apply?
->
-> A) Apply all recommended cuts
-> B) Let me pick which ones
-> C) Just show me the report, I'll do it manually
+### 🟢 SAFE — No functionality loss
+These are pure wins with zero risk:
+- Removing stale/outdated information
+- Removing duplicate content between global and project CLAUDE.md
+- Fixing formatting to use fewer tokens (e.g., shorter table syntax)
 
-If A or B: make the changes (edit CLAUDE.md files, move MCP servers to project configs).
-Always create a backup first: `cp ~/.claude/settings.json ~/.claude/settings.json.bak.$(date +%s)`
+### 🟡 MODERATE — Behavior may change slightly
+These save tokens but may affect how Claude handles edge cases:
+- Moving reference tables to memory files (loaded on demand instead of always)
+- Compressing verbose instructions to shorter versions (SHOW THE BEFORE/AFTER DIFF)
+- Scoping MCP servers to project-level (requires adding to each project first)
+
+### 🔴 HIGH RISK — Functionality will be lost
+These save the most tokens but break things if done wrong:
+- Removing MCP servers entirely
+- Removing behavioral CLAUDE.md sections
+- Disabling plugins
+
+**For each recommendation, show:**
+```
+[🟢/🟡/🔴] [Component] — Save ~X,XXX tokens
+  What: [exact change]
+  Risk: [what could break]
+  Reversible: [yes/no, how]
+```
+
+## Step 6: MCP Optimization Details
+
+For each MCP server, present:
+
+```
+MCP: [server-name]
+  Tools exposed: XX
+  Baseline cost: ~X,XXX tokens (loaded every message in every project)
+  Used in: [all projects / specific projects / unknown — ask user]
+
+  Options:
+  a) Keep global (if used across many projects)
+  b) Move to project-level (if used in 1-2 projects)
+     ⚠️  REQUIRES: add to [project]/.claude.json BEFORE removing from global
+  c) Disable (if rarely used — user can re-enable on demand)
+  d) No change
+```
+
+Ask the user which option for each MCP server individually. Do NOT batch this decision.
+
+## Step 7: Savings Summary
+
+```
+POTENTIAL SAVINGS:
+  🟢 Safe cuts:     ~X,XXX tokens/message (no risk)
+  🟡 Moderate cuts: ~X,XXX tokens/message (minor behavior changes)
+  🔴 High-risk cuts: ~X,XXX tokens/message (functionality loss)
+
+  If you apply 🟢 only: ~X,XXX tokens saved/message
+  If you apply 🟢+🟡:   ~X,XXX tokens saved/message
+  If you apply all:      ~X,XXX tokens saved/message
+
+  Over 100 messages/day, 🟢 alone saves ~X,XXX,XXX tokens/day
+```
+
+## Step 8: Apply (Only If User Asks)
+
+Do NOT offer to apply changes until the user has seen the full report and explicitly
+asks you to make changes. When they do:
+
+1. Back up everything first (settings.json, CLAUDE.md files)
+2. Apply one change at a time
+3. After each change, confirm it worked:
+   - For settings.json: validate JSON
+   - For CLAUDE.md: show the diff
+   - For MCP moves: verify the server loads in the target project
+4. After all changes, show the new total and the reduction
+
+If something breaks, restore from backup:
+```bash
+# List backups
+ls -la ~/.claude/*.bak.* 2>/dev/null
+# Restore (user picks which)
+cp ~/.claude/settings.json.bak.TIMESTAMP ~/.claude/settings.json
+```
 
 ## Rules
 
-- Never delete MCP servers without explicit user approval
-- Always back up settings before modifying
-- Show exact token counts, not vague "this is big"
-- Be aggressive with recommendations but conservative with actions
-- If you can't measure something precisely, say "estimated" and explain your method
+- **Report first, act never (unless asked).** Default is measurement, not modification.
+- **Never cut behavioral CLAUDE.md sections.** They're config, not bloat.
+- **Risk-classify every recommendation.** The user decides their risk tolerance.
+- **One MCP decision at a time.** Never batch "move all these to project-level."
+- **Validate JSON after every settings.json edit.** Broken JSON = broken Claude Code.
+- **Show diffs for every CLAUDE.md edit.** Never silently rewrite content.
+- **Moving an MCP server is a 2-step process:** add to destination FIRST, then remove from source. Never just remove.
+- If you can't measure something precisely, say "estimated" and explain your method.
+- Be aggressive with recommendations but conservative with actions.
