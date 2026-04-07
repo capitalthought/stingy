@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# stingy setup — register skills with Claude Code
+set -e
+
+STINGY_DIR="$(cd "$(dirname "$0")" && pwd)"
+SKILLS_DIR="$HOME/.claude/skills"
+
+echo "stingy — token efficiency toolkit for Claude Code"
+echo "================================================="
+echo ""
+
+# Ensure skills directory exists
+mkdir -p "$SKILLS_DIR"
+
+# Link or copy each skill
+SKILLS=(stingy-slim stingy-audit stingy-route stingy-burn stingy-compare stingy-budget stingy-ration stingy-guard)
+
+for skill in "${SKILLS[@]}"; do
+  target="$SKILLS_DIR/$skill"
+
+  # Remove old symlink or directory
+  if [ -L "$target" ]; then
+    rm "$target"
+  elif [ -d "$target" ]; then
+    rm -rf "$target"
+  fi
+
+  # Create directory with symlinked SKILL.md
+  mkdir -p "$target"
+  ln -sf "$STINGY_DIR/$skill/SKILL.md" "$target/SKILL.md"
+
+  # Link bin/ if it exists
+  if [ -d "$STINGY_DIR/$skill/bin" ]; then
+    ln -sf "$STINGY_DIR/$skill/bin" "$target/bin"
+  fi
+
+  echo "  ✅ /$skill"
+done
+
+# Create stingy data directory
+mkdir -p "$HOME/.stingy"
+
+echo ""
+echo "Installed ${#SKILLS[@]} skills:"
+echo ""
+echo "  /stingy-slim      Optimize CLAUDE.md + MCP configs for token efficiency"
+echo "  /stingy-audit     Analyze current session for token waste"
+echo "  /stingy-route     Recommend cheapest model/platform for a task"
+echo "  /stingy-burn      Show session token burn rate and cost breakdown"
+echo "  /stingy-compare   Cross-platform cost comparison"
+echo "  /stingy-budget    Set and track token spending budgets"
+echo "  /stingy-ration    Emergency mode: low on tokens, export or triage"
+echo "  /stingy-guard     Toggle pre-tool-use efficiency warnings"
+echo ""
+echo "Quick start: type /stingy-slim in any Claude Code session"
+echo ""
+echo "Data stored in: ~/.stingy/"

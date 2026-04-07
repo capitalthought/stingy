@@ -1,4 +1,4 @@
 agents
-bin
+/bin
 models.json
 .claude/settings.local.json
