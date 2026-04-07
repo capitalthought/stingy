@@ -1,0 +1,4 @@
+agents
+bin
+models.json
+.claude/settings.local.json
