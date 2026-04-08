@@ -104,5 +104,13 @@ case "$TOOL" in
     ;;
 esac
 
+# Track total tool calls across the session and recommend /clear at milestones
+total=$(bump_spawn_count "_total_tool_calls")
+if [ "$total" -eq 50 ] 2>/dev/null; then
+  echo "💡 stingy-guard: 50 tool calls this session. If you've finished a task, /clear will save tokens on the next one." >&2
+elif [ "$total" -eq 100 ] 2>/dev/null; then
+  echo "💡 stingy-guard: 100 tool calls — context is getting heavy. Strongly recommend /clear before starting anything new." >&2
+fi
+
 # Default: always allow
 exit 0
