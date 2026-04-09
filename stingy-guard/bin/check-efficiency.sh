@@ -78,12 +78,16 @@ case "$TOOL" in
         warn "Use the Grep tool instead of shell grep/rg. Dedicated tools have lower overhead." ;;
       find)
         warn "Use the Glob tool instead of 'find'. It's faster and cheaper." ;;
+      sed|awk)
+        warn "Use the Edit tool instead of '$first_word'. Dedicated tools are cheaper and safer." ;;
       *)
         # Also check after pipes: "git log | grep foo"
         if echo "$cmd" | grep -qE '\|\s*(cat|head|tail)\b'; then
           warn "Piped to cat/head/tail — consider using Read with offset/limit instead."
         elif echo "$cmd" | grep -qE '\|\s*(grep|rg)\b'; then
           warn "Piped to grep/rg — consider using the Grep tool instead."
+        elif echo "$cmd" | grep -qE '\|\s*(sed|awk)\b'; then
+          warn "Piped to sed/awk — consider using the Edit tool instead."
         fi
         ;;
     esac

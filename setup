@@ -6,6 +6,30 @@ STINGY_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILLS_DIR="$HOME/.claude/skills"
 SKILLS=(stingy-slim stingy-audit stingy-route stingy-burn stingy-compare stingy-budget stingy-ration stingy-guard)
 
+# ─── Version ─────────────────────────────────────────────────
+if [ "${1:-}" = "--version" ]; then
+  version="$(cat "$STINGY_DIR/VERSION" 2>/dev/null || echo "unknown")"
+  echo "stingy v$version"
+  exit 0
+fi
+
+# ─── Update ──────────────────────────────────────────────────
+if [ "${1:-}" = "--update" ]; then
+  echo "stingy — updating"
+  echo ""
+  if git -C "$STINGY_DIR" pull --ff-only; then
+    echo ""
+    echo "Update complete. Re-running setup..."
+    echo ""
+    exec "$0" --yes
+  else
+    echo ""
+    echo "  ⚠️  Update failed — not a git repo or fast-forward not possible."
+    echo "     Update manually: cd $STINGY_DIR && git pull"
+    exit 1
+  fi
+fi
+
 # ─── Uninstall ───────────────────────────────────────────────
 if [ "${1:-}" = "--uninstall" ]; then
   echo "stingy — uninstalling"
@@ -84,6 +108,14 @@ for skill in "${SKILLS[@]}"; do
   fi
 
   echo "  ✅ /$skill"
+done
+
+# ─── Verify symlinks ─────────────────────────────────────────
+for skill in "${SKILLS[@]}"; do
+  target="$SKILLS_DIR/$skill"
+  if [ ! -f "$target/SKILL.md" ]; then
+    echo "  ⚠️  Warning: $skill symlink appears broken — $target/SKILL.md not found"
+  fi
 done
 
 # Create stingy data directory

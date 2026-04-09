@@ -21,13 +21,18 @@ AI tools are expensive. Claude Opus costs 100x what Gemini Flash costs for the s
 | `/stingy-ration` | Running low on tokens? Export your work to a cheaper AI without losing context |
 | `/stingy-guard` | Auto-warns before you do something wasteful (like reading a 5000-line file) |
 
+## See it in action
+
+<!-- TODO: Add terminal recording (asciinema or vhs) -->
+> Try it yourself: install stingy and type `/stingy-slim` in Claude Code to see your token footprint.
+
 ## Install (30 seconds)
 
 Requires [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and Git.
 
 ```bash
-git clone https://github.com/capitalthought/stingy.git ~/.claude/skills/stingy
-cd ~/.claude/skills/stingy && ./setup
+git clone https://github.com/capitalthought/stingy.git ~/stingy
+cd ~/stingy && ./setup
 ```
 
 Then open Claude Code and type `/stingy-slim` to see your token footprint.
@@ -35,7 +40,7 @@ Then open Claude Code and type `/stingy-slim` to see your token footprint.
 ## Uninstall
 
 ```bash
-cd ~/.claude/skills/stingy && ./setup --uninstall
+cd ~/stingy && ./setup --uninstall
 ```
 
 ## How it works
