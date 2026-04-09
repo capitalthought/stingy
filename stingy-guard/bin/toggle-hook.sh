@@ -71,7 +71,7 @@ with open('$SETTINGS', 'w') as f:
       echo "✅ stingy-guard hook installed. Restart Claude Code to activate."
     else
       echo "❌ JSON validation failed! Restoring backup..." >&2
-      # shellcheck disable=SC2012 -- backup filenames are predictable timestamps
+      # shellcheck disable=SC2012
       cp "$(ls -t "$SETTINGS".bak.* | head -1)" "$SETTINGS"
       exit 1
     fi
@@ -118,7 +118,7 @@ with open('$SETTINGS', 'w') as f:
       echo "✅ stingy-guard hook removed. Restart Claude Code to take effect."
     else
       echo "❌ JSON validation failed! Restoring backup..." >&2
-      # shellcheck disable=SC2012 -- backup filenames are predictable timestamps
+      # shellcheck disable=SC2012
       cp "$(ls -t "$SETTINGS".bak.* | head -1)" "$SETTINGS"
       exit 1
     fi
