@@ -8,7 +8,7 @@ AI tools are expensive. Claude Opus costs 100x what Gemini Flash costs for the s
 
 ## What stingy does
 
-8 slash commands you can type in Claude Code:
+8 slash commands + 1 maintenance command you can type in Claude Code:
 
 | Command | What it does |
 |---------|-------------|
@@ -20,6 +20,7 @@ AI tools are expensive. Claude Opus costs 100x what Gemini Flash costs for the s
 | `/stingy-budget` | Set a daily/weekly spending limit and track it |
 | `/stingy-ration` | Running low on tokens? Export your work to a cheaper AI without losing context |
 | `/stingy-guard` | Auto-warns before you do something wasteful (like reading a 5000-line file) |
+| `/stingy:maintenance` | Checks for upstream pricing and model changes that could make stingy stale |
 
 ## See it in action
 

@@ -29,7 +29,12 @@ stingy/
 ├── stingy-guard/SKILL.md          # Pre-tool-use efficiency hook
 │   └── bin/
 │       ├── check-efficiency.sh    # Hook script for tool interception
-│       └── toggle-hook.sh         # Safely add/remove hook from settings.json
+│       ├── toggle-hook.sh         # Safely add/remove hook from settings.json
+│       └── session-start.sh       # Session-start hook — maintenance nudge
+├── commands/
+│   └── maintenance.md             # /stingy:maintenance — upstream change checker
+├── generated/
+│   └── maintenance.json           # Last maintenance run timestamp (checked in)
 ├── README.md                      # Plain-English project description
 ├── todolist.md                    # Active TODO items
 ├── todolist-archive.md            # Completed/verified items
@@ -37,7 +42,8 @@ stingy/
 │   └── statusline-stingy.sh
 └── .github/
     └── workflows/
-        └── auto-merge.yml
+        ├── auto-merge.yml
+        └── ci.yml
 ```
 
 ## Commands
@@ -58,6 +64,7 @@ stingy/
 | `/stingy-budget` | Set a spending limit and track it |
 | `/stingy-ration` | Running low? Export your work to a cheaper AI without losing context |
 | `/stingy-guard` | Auto-warn before wasteful tool calls |
+| `/stingy:maintenance` | Check for upstream pricing/model changes (command) |
 
 ### Which skill should I use?
 
