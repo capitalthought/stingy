@@ -31,6 +31,8 @@ stingy/
 │       ├── check-efficiency.sh    # Hook script for tool interception
 │       └── toggle-hook.sh         # Safely add/remove hook from settings.json
 ├── README.md                      # Plain-English project description
+├── todolist.md                    # Active TODO items
+├── todolist-archive.md            # Completed/verified items
 ├── .claude/
 │   └── statusline-stingy.sh
 └── .github/
