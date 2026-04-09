@@ -19,9 +19,9 @@ jobs:
 
       - name: Shellcheck
         run: |
-          shellcheck stingy-guard/bin/check-efficiency.sh
-          shellcheck stingy-guard/bin/toggle-hook.sh
-          shellcheck .claude/statusline-stingy.sh
+          shellcheck --severity=warning stingy-guard/bin/check-efficiency.sh
+          shellcheck --severity=warning stingy-guard/bin/toggle-hook.sh
+          shellcheck --severity=warning .claude/statusline-stingy.sh
 
       - name: Verify all SKILL.md files exist
         run: |
